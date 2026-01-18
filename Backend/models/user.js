@@ -50,7 +50,7 @@ module.exports = (sequelize, DataTypes) => {
             scopes: {
                 withPassword: {
                     attributes: {
-                        include: ['password'] 
+                        include: ['password']
                     }
                 }
             }

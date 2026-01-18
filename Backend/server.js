@@ -5,7 +5,7 @@ const app = express() ;
 const requestLoggerMiddleware = require('./middlewares/requestLogger')
 const errorHandlerMiddleware = require('./middlewares/errorHandler') ;
 
-
+const userRouter = require('./routers/userRouter')
 const categoryRouter = require('./routers/categoryRouter') ;
 const productRouter = require('./routers/productRouter')
 const db = require('./models') ;
@@ -17,7 +17,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(express.json())
 
 
-
+app.use('/api/user' , userRouter)
 app.use('/api/category' , categoryRouter) ;
 app.use('/api/product', productRouter)
 app.use(errorHandlerMiddleware)

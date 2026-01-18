@@ -1,5 +1,5 @@
 
-const { Category } = require('../models') ;
+const { Category , Product } = require('../models') ;
 
 
 exports.createCategory = async(req , res , next) => {
@@ -25,12 +25,12 @@ exports.createCategory = async(req , res , next) => {
 exports.getAllCategory = async(req, res , next) => {
   try {
       const getAllCategory = await Category.findAll(
-        //   {
-        //       include: {
-        //           model: 'Product',
-        //           as: 'products'
-        //       }
-        //   }
+          {
+              include: {
+                  model: Product,
+                  as: 'products'
+              }
+          }
       );
       res.json(getAllCategory);
   } catch (error) {

@@ -67,5 +67,17 @@ exports.updateProduct = async ( req , res , next) => {
     } catch (error) {
         next(error);
     }
+};
+
+exports.deleteProduct = async(req, res , next) => {
+    try {
+        const deleteRows = await Product.destroy({where : {id : req.params.id}}) ;
+        if(deleteRows === 0) {
+            return res.status(404).json({ message: 'Khong tim thay san pham' });
+        }
+        res.status(204).send()
+    } catch (error) {
+        next(error); 
+    }
 }
 

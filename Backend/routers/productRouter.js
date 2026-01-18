@@ -1,5 +1,5 @@
 const express = require('express') ;
-const { createProduct, getAllProducts, updateProduct } = require('../controllers/productController');
+const { createProduct, getAllProducts, updateProduct, deleteProduct } = require('../controllers/productController');
 const { uploadSingleImage } = require('../middlewares/uploadMiddleware');
 const { resizeImage } = require('../middlewares/imageProcessingMiddleware');
 const router = express.Router() ;
@@ -16,5 +16,8 @@ router.put('/:id',
     uploadSingleImage('imageURL'),
     resizeImage,
     updateProduct
+)
+router.delete('/:id', 
+    deleteProduct
 )
 module.exports = router
