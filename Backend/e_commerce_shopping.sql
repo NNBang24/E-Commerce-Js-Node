@@ -24,7 +24,11 @@ create table products (
 	id int primary key auto_increment ,
     name varchar(255) not null ,
     price decimal(10,2) not null ,
+    priceSale decimal(10,2) ,
     description text ,
+	sizes json ,
+    tags json ,
+    imageURL varchar(255) ,
     categoryId int ,
     foreign key (categoryId ) references categories(id)
 ) ;
@@ -40,10 +44,8 @@ create table carts (
     quantity int default 1 ,
     userId int ,
     productId int  ,
+    sizeSelected varchar(10) ,
     foreign key (userId ) references users(id) ,
     foreign key (productId ) references products(id) 
     
 ) ;
-
-
-

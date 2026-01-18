@@ -31,9 +31,23 @@ module.exports = (sequelize ,DataTypes) => {
                 type: DataTypes.DECIMAL(10, 2),
                 allowNull: false,
             },
+            priceSale: {
+                type: DataTypes.DECIMAL(10, 2),
+                defaultValue: 0,
+            },
+            imageURL: {
+                type: DataTypes.STRING,
+            },
+            sizes: {
+                type: DataTypes.JSON, 
+            },
+            tags: {
+                type: DataTypes.JSON, 
+            },
             description: {
                 type: DataTypes.TEXT,
             },
+            
             categoryId: {
                 type: DataTypes.INTEGER,
             }
@@ -41,7 +55,8 @@ module.exports = (sequelize ,DataTypes) => {
         {
             sequelize,
             modelName: 'Product',
-            tableName: 'products'
+            tableName: 'products',
+            
         }
     );
 

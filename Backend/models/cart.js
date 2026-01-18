@@ -21,6 +21,9 @@ module.exports = (sequelize, DataTypes) => {
             } ,
             productId : {
                 type: DataTypes.INTEGER,
+            },
+            sizeSelected  : {
+                type: DataTypes.STRING,
             }
         },
         {
