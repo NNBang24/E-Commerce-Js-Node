@@ -177,7 +177,7 @@ const fetchProduct = async () => {
   const res = await fetch('http://localhost:3000/api/product');
   const products = await res.json();
 
-  console.log(products); 
+  // console.log(products); 
 
   // products = result.data || result; 
   if (!Array.isArray(products)) {

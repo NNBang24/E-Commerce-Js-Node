@@ -60,7 +60,10 @@ let currentDisplay = 8;
 
 let products = [];
 // hien thij ta ca san pham 
-function renderProduct(container, start, end) {
+function renderProduct(container, start, end , isLoadMore = false) {
+  if (!isLoadMore) {
+    container.innerHTML = ''; // chỉ xoá khi KHÔNG phải load more
+  }
   const showProduct = products.slice(start, end);
   showProduct.forEach(item => {
     const divEl = document.createElement('div');
@@ -105,13 +108,13 @@ const fetchProduct = async () => {
   const res = await fetch('http://localhost:3000/api/product');
   products = await res.json();
 
-  console.log(products);
+  // console.log(products);
   if (!Array.isArray(products)) {
     console.error("API khong tra ve mang san pham");
     return;
   }
 
-  renderProduct(productMainShirtPage, 0, currentDisplay);
+  renderProduct(productMainShirtPage, 0, currentDisplay, false);
 }
 // hien thi san pham trang product
 
@@ -158,24 +161,39 @@ function renderProductList(container, list) {
 }
 
 const selectDrop = document.querySelector('#select-drop')
-// clik change loc Nam va NU 
+// clik change loc Danh muc 
 selectDrop.addEventListener("change", () => {
   const selectValue = selectDrop.value;
-  if (selectValue === 'Nam') {
+  if (selectValue === 'shirt-man') {
     const shirtMen = products.filter(item => {
-      return item.category.includes('Nam')
+      return item.category.name.includes('SHIRT MEN')
     })
     renderProductList(productMainShirtPage, shirtMen);
 
   }
-  else if (selectValue === 'Nu') {
+  else if (selectValue === 'shirt-women') {
     const shirtWomen = products.filter(item => {
-      return item.category.includes('Nu')
+      return item.category.name.includes('SHIRT WOMEN')
     })
     renderProductList(productMainShirtPage, shirtWomen)
   }
+  else if (selectValue === 'sweater') {
+    const sweater = products.filter(item => {
+      return item.category.name.includes('SWEATER')
+    })
+    renderProductList(productMainShirtPage, sweater)
+  }
+  else if (selectValue === 't-shirt') {
+    const shirt = products.filter(item => {
+      return item.category.name.includes('T SHIRT')
+    })
+    renderProductList(productMainShirtPage, shirt)
+  }
   else {
-    renderProduct(productMainShirtPage, 0, currentDisplay)
+    renderProduct(productMainShirtPage, 0, currentDisplay ,false
+
+    ) ;
+    loadMoreBtn.classList.remove('hidden'); 
   }
   loadMoreBtn.classList.add('hidden');
 
@@ -215,7 +233,7 @@ inputFind.addEventListener('keydown', (event) => {
 
 // click remove mat nut hien thi them
 loadMoreBtn.addEventListener("click", () => {
-  renderProduct(productMainShirtPage, currentDisplay, products.length);
+  renderProduct(productMainShirtPage, currentDisplay, products.length ,true);
   loadMoreBtn.classList.add('hidden')
 });
 

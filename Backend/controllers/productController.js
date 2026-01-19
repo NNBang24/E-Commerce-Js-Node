@@ -1,14 +1,21 @@
-const { Product } = require('../models');
+const { Product , Category } = require('../models');
 const path = require('path');
 const fs = require('fs');
 exports.getAllProducts = async (req, res, next) => {
     try {
-        const products = await Product.findAll()
-        res.json(products)
+        const products = await Product.findAll({
+            include: [
+                {
+                    model: Category,
+                    as: 'category'
+                }
+            ]
+        });
+        res.json(products);
     } catch (error) {
-        next(error) ;
+        next(error);
     }
-}
+};
 
 exports.createProduct = async (req, res, next) => {
     try {
