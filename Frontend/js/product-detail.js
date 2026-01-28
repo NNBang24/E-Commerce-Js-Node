@@ -122,7 +122,7 @@ async function fetchProduct(isLoadMore = false) {
     const result = await res.json();
     const newProducts = result.products;
 
-    renderProduct(productShirtSame, newProducts, isLoadMore); 
+    renderProduct(productShirtSame, newProducts, isLoadMore);
 
     if (result.totalPage && page >= result.totalPage) {
       loadMoreBtn.classList.add('hidden');
@@ -273,7 +273,7 @@ fetch(`${ENV.API_URL}/api/product/${productID}`)
       quantityDetail.value = current + 1
     })
     const addToCart = document.querySelector('.button-detail');
-    addToCart.addEventListener('click', () => {
+    addToCart.addEventListener('click', async () => {
 
 
       const token = localStorage.getItem('accessToken');
@@ -285,43 +285,32 @@ fetch(`${ENV.API_URL}/api/product/${productID}`)
         return;
       }
 
-
-
-
-      const name = document.querySelector('.name-detail').textContent;
-      const price = document.querySelector('.price-detail').textContent;
-      const dropSizes = document.getElementById('select-drop-size').value;
+      const size = document.getElementById('select-drop-size').value;
       const quantity = parseInt(document.getElementById('quantity-detail').value);
-      const img = productDetail.imageURL
-      const id = productDetail.id;
-      // lay localStorage ve 
-      let cart = JSON.parse(localStorage.getItem('cart')) || [];
-      const newProductCart = {
-        id,
-        name,
-        price,
-        sizes: dropSizes,
-        quantity,
-        img,
-        email: parseUser.email
-      };
-
-      const cartIndex = cart.find(item =>
-        item.id === id &&
-        item.sizes === dropSizes &&
-        item.email === parseUser.email
-      );
-
-      if (cartIndex) {
-        cartIndex.quantity += quantity;
-      } else {
-        cart.push(newProductCart);
+      const data = {
+        userId : parseUser.id ,
+        productId : productDetail.id ,
+        sizeSelected: size,
+        quantity: quantity  
       }
-      localStorage.setItem('cart', JSON.stringify(cart));
-
-      alert('Thêm giỏ hàng thành công')
-      window.location.href = 'cart.html'
+      try {
+        const res = await fetch(`${ENV.API_URL}/api/cart` ,{
+          method : 'POST' ,
+          headers : {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body : JSON.stringify(data)
+          
+        })
+        await res.json()
+        alert('Thêm giỏ hàng thành công')
+        window.location.href = 'cart.html'
+      } catch (error) {
+        console.log(err);
+        alert("Lỗi thêm giỏ hàng");
+      }
     })
     fetchProduct();
   }
-);
+  );

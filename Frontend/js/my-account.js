@@ -1,4 +1,5 @@
 import { user } from './products.data.js';
+import { ENV } from './config.js';
 
 //
 const openPopup = document.querySelector(".open-popup");
@@ -91,7 +92,30 @@ infoUsers.forEach(order => {
 });
 
 
+const loadCartQuantityIcon = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
 
+    const res = await fetch(`${ENV.API_URL}/api/cart`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const list = data.data || data;
+
+    const totalQuantity = list.reduce((sum, item) => sum + item.quantity, 0);
+    updateCartQuantityIcon(totalQuantity);
+}
+function updateCartQuantityIcon(total) {
+    const quantityElement = document.querySelector('.update-content-cart');
+    if (!quantityElement) return;
+
+    quantityElement.textContent = total;
+    if (total > 0) {
+        quantityElement.classList.remove('hidden');
+    } else {
+        quantityElement.classList.add('hidden');
+    }
+}
 
 // console.log(JSON.parse(localStorage.getItem('checkoutForm')));
 // dang xuat 
@@ -125,3 +149,4 @@ inputFind.addEventListener('keydown', (event) => {
         }
     }
 });
+loadCartQuantityIcon()

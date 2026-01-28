@@ -1,6 +1,6 @@
 import { imagesList } from './products.data.js';
-import {ENV} from './config.js'
-let filterProducts = [];
+import { ENV } from './config.js'
+
 //
 const openPopup = document.querySelector(".open-popup");
 const navigationPopup = document.querySelector(".navigation-popup");
@@ -144,7 +144,7 @@ function renderProduct(container, products) {
       `;
     }
 
-    const outSandHTML = `<img src="http://localhost:3000/uploads/${item.imageURL}" alt="${item.name}">`;
+    const outSandHTML = `<img src="${ENV.API_URL}/uploads/${item.imageURL}" alt="${item.name}">`;
 
     divEl.innerHTML = `
       <div class="img_hidden">
@@ -186,7 +186,7 @@ async function fetchProduct() {
 
 
 loadMoreBtn.addEventListener("click", () => {
-  page++;          
+  page++;
   fetchProduct()
   // loadMoreBtn.classList.add('hidden')
 });
@@ -201,30 +201,28 @@ inputFind.addEventListener('keydown', (event) => {
     }
   }
 });
-// hien co bao nhieu san pham tren icon gio hang 
 
-const cart = JSON.parse(localStorage.getItem('cart')) || [];
-const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+const  loadCartQuantityIcon= async() => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return;
 
-let cartItems = [];
+  const res = await fetch(`${ENV.API_URL}/api/cart`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await res.json();
+  const list = data.data || data;
 
-if (currentUser) {
-  cartItems = cart.filter(item => item.email === currentUser.email);
+  const totalQuantity = list.reduce((sum, item) => sum + item.quantity, 0);
+  updateCartQuantityIcon(totalQuantity);
 }
+function updateCartQuantityIcon(total) {
+  const quantityElement = document.querySelector('.update-content-cart');
+  if (!quantityElement) return;
 
-const quantityElement = document.querySelector('.update-content-cart');
-
-if (currentUser && quantityElement) {
-  const totalQuantity = cartItems.reduce((total, item) => total + Number(item.quantity), 0);
-
-  if (totalQuantity > 0) {
-    quantityElement.textContent = totalQuantity;
+  quantityElement.textContent = total;
+  if (total > 0) {
     quantityElement.classList.remove('hidden');
   } else {
-    quantityElement.classList.add('hidden');
-  }
-} else {
-  if (quantityElement) {
     quantityElement.classList.add('hidden');
   }
 }
@@ -255,4 +253,5 @@ buttonMyAccount.addEventListener('click', () => {
 
 
 
-fetchProduct() ;
+fetchProduct();
+loadCartQuantityIcon()

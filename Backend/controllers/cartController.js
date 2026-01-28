@@ -1,43 +1,115 @@
-const {Cart, User} = require('../models') ;
-
-exports.createCart = async(req , res , next) => {
+const { Cart, User, Product } = require('../models');
+exports.addToCart = async (req, res, next) => {
     try {
-        const { quantity, productId, userId, sizeSelected } = req.body ;
-        const createCart = await Cart.create({
-            quantity : quantity  ,
-            productId : productId ,
-            userId : userId ,
-            sizeSelected : sizeSelected 
-        }) ;
-        res.status(200).json({ message: "them gio hang thanh cong", data: createCart }) ;
-    } catch (error) {
-        next(error) ;
-    }
-} ;
+        const userId = req.user.userId || req.user.id;
+        const { quantity, productId , sizeSelected } = req.body;
 
-exports.updateCart = async(req , res , next) => {
-    try {
-        const { quantity, productId, userId, sizeSelected } = req.body;
-        const updateCart = await Cart.update(
-            {
-                quantity : quantity ,
-                sizeSelected : sizeSelected
-            } ,
-            {
-                where : {userId , productId} 
+        // 1. Kiểm tra xem sản phẩm cùng Size đã tồn tại trong giỏ của User chưa
+        const existingItem = await Cart.findOne({
+            where: {
+                userId: Number(userId),
+                productId: Number(productId),
+                sizeSelected: String(sizeSelected).trim()   
             }
-        )
-        res.status(200).json({message : "cap nhat gio hang thanh cong"})
-    } catch ({error}) {
-        next(error) ;
-    }
-} ;
+        });
 
-exports.getAllCart = async(req , res, next) => {
+        if (existingItem) {
+            // 2. Nếu đã có: Thực hiện CỘNG DỒN số lượng
+            const newQuantity = existingItem.quantity + Number(quantity);
+            await existingItem.update({ quantity: newQuantity });
+
+            return res.status(200).json({
+                message: 'Da cong don san pham',
+                data: existingItem
+            });
+        }
+
+        // 3. Nếu chưa có: Tạo mới hoàn toàn
+        const newItem = await Cart.create({
+            quantity: Number(quantity),
+            productId : Number(productId),
+            userId : Number(userId),
+            sizeSelected: String(sizeSelected).trim()   
+        });
+
+        return res.status(201).json({
+            message: "Them vao gio hang thanh cong",
+            data: newItem
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updateCartQuantity = async (req, res, next) => {
     try {
-        const getAllCart = await Cart.findAll() ;
+        const userId = req.user.userId || req.user.id;
+        const { quantity, productId, sizeSelected } = req.body;
+
+        // Cập nhật giá trị
+        const [updatedRows] = await Cart.update(
+            { quantity: Number(quantity) },
+            {
+                where: {
+                    userId: userId,
+                    productId: Number(productId), 
+                    sizeSelected: String(sizeSelected).trim() 
+                }
+            }
+        );
+
+        if (updatedRows === 0) {
+         
+            return res.status(404).json({ message: "khong tim thay san pham" });
+        }
+
+        res.status(200).json({ message: "Cap nhat thanh cong" });
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getAllCart = async (req, res, next) => {
+    try {
+        const userId = req.user.userId; // lấy từ token
+        const getAllCart = await Cart.findAll({
+            where: { userId },   // lọc theo user
+            include: [{
+                model: Product,
+                as: 'product',
+                attributes: ['name', 'price', 'imageURL']
+            }]
+        });
         res.json(getAllCart)
     } catch (error) {
         next(error)
+    }
+}
+
+exports.deleteCart = async ( req , res , next) => {
+    try {
+        const {productId , sizeSelected} = req.body ;
+        const userId = req.user.userId ;
+        const deleteRows = await Cart.destroy({
+            where : {
+                userId : userId ,
+                productId : productId ,
+                sizeSelected :sizeSelected 
+            }
+        });
+        if( deleteRows === 0) {
+            return res.status(404).json({
+                message : "khong tim thay san pham de xoa"
+            }) 
+        }
+        res.status(200).json({
+            message :"xoa thanh cong san pham ra khoi gio hang" ,
+            data : {
+                productId ,
+                sizeSelected 
+            }
+        })
+    } catch (error) {
+            next(error) ;
     }
 }

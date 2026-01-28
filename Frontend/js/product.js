@@ -248,7 +248,30 @@ if (currentUser && quantityElement) {
     quantityElement.classList.add('hidden');
   }
 }
+const loadCartQuantityIcon = async () => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return;
 
+  const res = await fetch(`${ENV.API_URL}/api/cart`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await res.json();
+  const list = data.data || data;
+
+  const totalQuantity = list.reduce((sum, item) => sum + item.quantity, 0);
+  updateCartQuantityIcon(totalQuantity);
+}
+function updateCartQuantityIcon(total) {
+  const quantityElement = document.querySelector('.update-content-cart');
+  if (!quantityElement) return;
+
+  quantityElement.textContent = total;
+  if (total > 0) {
+    quantityElement.classList.remove('hidden');
+  } else {
+    quantityElement.classList.add('hidden');
+  }
+}
 // dang xuat 
 const spanLogOut = document.querySelector('.log-out');
 
@@ -272,4 +295,5 @@ buttonMyAccount.addEventListener('click', () => {
   }
 })
 
-fetchProduct()
+fetchProduct();
+loadCartQuantityIcon()

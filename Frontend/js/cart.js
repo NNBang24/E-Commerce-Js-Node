@@ -1,3 +1,7 @@
+
+
+
+import { ENV } from './config.js';
 import { imagesList, products } from './products.data.js';
 
 //
@@ -56,31 +60,62 @@ if (!pareUser) {
   // return;
 }
 /// them san pham vao gio hang
-const currentCart = localStorage.getItem('cart')
-const cartParse = currentCart ? JSON.parse(currentCart) : [];
-const sectionCartRow = document.querySelector('.cart-row');
-
-
-const cart = cartParse.filter(item => {
-  return item.email === pareUser.email;
-});
-console.log("pareUser:", pareUser);
-console.log("email đang lọc:", pareUser.email);
-
-
-if (cart.length === 0) {
-  sectionCartRow.innerHTML = `
-  <p class="cart-dang-trong"> Giỏ hàng đang trống  </p>
-  `
+const getCartApi = async () => {
+  const token = localStorage.getItem('accessToken');
+  console.log("TOKEN:", token);   // thêm dòng này
+  const res = await fetch(`${ENV.API_URL}/api/cart`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  return await res.json();
+};
+const updateCartApi = async (data) => {
+  const token = localStorage.getItem('accessToken');
+  const res = await fetch(`${ENV.API_URL}/api/cart`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  return await res.json();
 }
-else {
-  // hine thi tieu de cua trang 
+const deleteCartApi = async (data) => {
+  const token = localStorage.getItem('accessToken');
+  const res = await fetch(`${ENV.API_URL}/api/cart`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+};
+const sectionCartRow = document.querySelector('.cart-row');
+const initCartPage = async () => {
+  const cartItems = await getCartApi();
+  const list = cartItems.data || cartItems;
+  sectionCartRow.innerHTML = "";
+
+  if (!list || list.length === 0) {
+    sectionCartRow.innerHTML = `<p class="cart-dang-trong"> Giỏ hàng đang trống  </p>`;
+    return;
+  }
+  renderCartUI(list);
+
+}
+
+const renderCartUI = (cartItem) => {
+  let totalAll = 0;
+  let totalQuantity = 0;
   const divELCarPage = document.createElement('div')
   divELCarPage.classList.add('cart-page-layout');
   divELCarPage.innerHTML = `
                 <div class="cart-page_head">
                     <h1>Giỏ hàng của bạn</h1>
-                    <p>Hiện đang có ${cart.length} sản phẩm</p>
+                    <p>Hiện đang có ${cartItem.length} sản phẩm</p>
                 </div>
                 <div class="cartformpage">
                     <div class="head-cart">
@@ -97,258 +132,110 @@ else {
                     <div class="content-cart">
                     </div>
   `
-  sectionCartRow.appendChild(divELCarPage)
-  ///
+  sectionCartRow.appendChild(divELCarPage);
+
   const divContentCart = document.querySelector('.content-cart')
-  cart.forEach(item => {
-    const divEl = document.createElement('div')
-    divEl.classList.add('cart-page-layout');
-    // tin gia tong san cua 1 san pham 
-    const price = item.price.replace(/[^\d]/g, '');
-
-    const totalPrice = Number(item.quantity) * Number(price);
+  cartItem.forEach(item => {
+    const product = item.product;
+    const subTotal = item.quantity * product.price;
+    totalAll += subTotal;
+    totalQuantity += item.quantity;
+    const divEl = document.createElement('div');
     divEl.innerHTML = `
-            
-                        <div class="content-cart-page" data-id="${item.id}">
-                            <div class="content-item img-cart">
-                                <img src="${item.img}" alt="">
-
-                                <div class="content-cart-product">
-                                    <p>Mã sản phẩm : ${item.id} , Size : ${item.sizes}</p>
-                                    <h1>${item.name}</h1>
-                                    <button class="button-cart-remove">Remove</button>
-                                </div>
-                            </div>
-                            <div class="quantity-item">
-                                <span class="span-detail minus">-</span>  
-                                <input type="number" class="quantity-cart" name="quantity" min="1" value="${item.quantity}">
-                                <span class="span-detail plus">+</span>
-                            </div>
-                            <div class="price-item price-cart ">
-                                <span> ${totalPrice.toLocaleString('vi-VN')} đ</span>
-                            </div>
-                        </div>
-                        
-                        
-    `
-    divContentCart.appendChild(divEl)
-  });
-  // cap nhat so luong 
-  // const cart = JSON.parse(localStorage.getItem('cart')) || [];
-  const currentUser = JSON.parse(localStorage.getItem('currentUser')) || [];
-  let updateCart = cart.filter(item => {
-    return item.email === currentUser.email
+        <div class="content-cart-page" data-id="${item.productId}" data-size="${item.sizeSelected}">
+            <div class="content-item img-cart">
+               <img src="${ENV.API_URL}/uploads/${product.imageURL}" alt="">
+                <div class="content-cart-product">
+                    <p>Mã: ${item.productId}, Size: ${item.sizeSelected}</p>
+                    <h1>${product.name}</h1>
+                    <button class="button-cart-remove">Remove</button>
+                </div>
+            </div>
+            <div class="quantity-item">
+                <span class="span-detail minus">-</span>  
+                <input type="number" class="quantity-cart" value="${item.quantity}" readonly>
+                <span class="span-detail plus">+</span>
+            </div>
+            <div class="price-item">
+                <span>${subTotal.toLocaleString('vi-VN')} đ</span>
+            </div>
+        </div>`;
+    divContentCart.appendChild(divEl);
   })
-
-  const contentCartPage = document.querySelectorAll('.content-cart-page');
-
-  function updatedTotalCart() {
-    const newTotal = updateCart.reduce((total, item) => {
-      const price = item.price.replace(/[^\d]/g, '');
-      return total + Number(price) * Number(item.quantity);
-    }, 0);
-
-    const totalPriceElemnt = document.querySelector('.total-price');
-    if (totalPriceElemnt) {
-      totalPriceElemnt.textContent = `${newTotal.toLocaleString('vi-VN')} đ`;
-    }
-    updateCart.forEach((item, index) => {
-      const price = Number(item.price.replace(/[^\d]/g, ''));
-      const quantity = Number(item.quantity);
-      const totalItem = price * quantity;
-
-      const cartRow = contentCartPage[index];
-      const priceItem = cartRow.querySelector('.price-item');
-
-      if (priceItem) {
-        priceItem.textContent = `${totalItem.toLocaleString('vi-VN')} đ`;
-      }
-    });
-
-
-
-  }
-
- contentCartPage .forEach((cartItem, index) => {
-    const spanMinus = cartItem.querySelector('.minus');
-    const spanPlus = cartItem.querySelector('.plus');
-    const quantityInput = cartItem.querySelector('.quantity-cart');
-
-    spanMinus.addEventListener('click', () => {
-      let current = Number(quantityInput.value) || 1;
-      if (current > 1) {
-        quantityInput.value = current - 1;
-        updateCart[index].quantity = Number(quantityInput.value);
-        localStorage.setItem('cart', JSON.stringify(updateCart));
-        updatedTotalCart();
-        updateCartQuantityIcon();
-      }
-    });
-
-    spanPlus.addEventListener('click', () => {
-      let current = Number(quantityInput.value) || 1;
-      quantityInput.value = current + 1;
-      updateCart[index].quantity = Number(quantityInput.value);
-      localStorage.setItem('cart', JSON.stringify(updateCart));
-      updatedTotalCart();
-      updateCartQuantityIcon();
-    });
-    quantityInput.addEventListener('change', () => {
-      let newValue = Number(quantityInput.value);
-      if (newValue > 1) {
-        updateCart[index].quantity = newValue;
-        localStorage.setItem('cart', JSON.stringify(updateCart));
-        updatedTotalCart();
-        updateCartQuantityIcon();
-      }
-      else {
-        quantityInput.value =1 ;
-        updateCart[index].quantity = 1;
-        localStorage.setItem('cart', JSON.stringify(updateCart));
-        updatedTotalCart();
-        updateCartQuantityIcon();
-      }
-    })
-  });
-
-
-  // tinh tong so tien cua san pham
-  function tinhTongSoTien(cart) {
-    let total = 0
-    cart.forEach(item => {
-      const price = item.price.replace(/[^\d]/g, '');
-      total += (Number(item.quantity) * Number(price));
-    })
-    return total;
-
-  }
-  // console.log(tinhTongSoTien(cart))
-
-  const cartFormPage = document.querySelector('.cartformpage');
   const divTotal = document.createElement('div');
   divTotal.classList.add('total-cart');
   divTotal.innerHTML = `
-          <span>Tổng tiền :</span>
-          <p class="total-price"> ${tinhTongSoTien(cart).toLocaleString('vi-VN')} đ</p>  
-  `
-  cartFormPage.appendChild(divTotal)
+      <span>Tổng tiền :</span>
+      <p class="total-price">${totalAll.toLocaleString('vi-VN')} đ</p>
+  `;
+  divELCarPage.appendChild(divTotal);
 
-  // tien hanh den trang thanh toan
+  // Checkout
   const divCheckOut = document.createElement('div');
-  divCheckOut.classList.add('checkout-cart')
+  divCheckOut.classList.add('checkout-cart');
   divCheckOut.innerHTML = `
-  <p class="price-shop-continue" >Tiếp tục mua sắm</p>
-  <button class="button-checkout-cart">Thanh toán sản phẩm</button>
-  `
-  cartFormPage.appendChild(divCheckOut);
-
-
-  // remove san pham 
-  const buttonDelete = document.querySelectorAll('.button-cart-remove');
-  buttonDelete.forEach(button => {
-    button.addEventListener('click', (event) => {
-      const deleteButton = event.target;
-      const contentCart = deleteButton.parentElement;
-      const contenItem = contentCart.parentElement;
-      const contentCartPage = contenItem.parentElement;
-      const id = contentCartPage.getAttribute('data-id');
-
-      const isConfirm = confirm('Bạn chắc chắn muốn xoá sản phẩm này?');
-      if (isConfirm) {
-        let cart = [];
-        const current = localStorage.getItem('cart');
-        if (current !== null) {
-          cart = JSON.parse(current)
-        }
-
-        // xoa san pham can xoa tren local
-        const updatedCart = cart.filter(item => {
-          return String(item.id) !== String(id);
-        })
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
-        // xoa san pham tren gia dien
-        contentCartPage.remove();
-
-
-        /// cap nhat lai tong tien khi xoa san pham 
-        const newTotal = updatedCart.reduce((total, item) => {
-          const price = Number(item.price.replace(/[^\d]/g, ''));
-          return total + (price * Number(item.quantity));
-        }, 0);
-        const totalPriceElment = document.querySelector('.total-price');
-        if (totalPriceElment) {
-          totalPriceElment.textContent = `${newTotal.toLocaleString('vi-VN')} đ`;
-        }
-
-
-        // neu khong co san pham gi se hien
-        if (updatedCart.length === 0) {
-          const sectionCartRow = document.querySelector('.cart-row');
-          sectionCartRow.innerHTML = `
-          <p class="cart-dang-trong"> Giỏ hàng đang trống  </p>
-        `
-        }
-
-      }
-
-
-    })
-  })
-  //
-
-  // chuyen sang trang thanh toan
+      <p class="price-shop-continue">Tiếp tục mua sắm</p>
+      <button class="button-checkout-cart">Thanh toán sản phẩm</button>
+  `;
+  divELCarPage.appendChild(divCheckOut);
+  const btnCheckout = divCheckOut.querySelector('.button-checkout-cart');
+  btnCheckout.addEventListener('click', () => {
+    window.location.href = 'checkout.html'; // trang thanh toán của bạn
+  });
   const shopPriceContinue = document.querySelector('.price-shop-continue');
   shopPriceContinue.addEventListener('click', () => {
     window.location.href = `products.html`
   })
+  updateCartQuantityIcon(totalQuantity);
 
-  const buttonCheckoutPage = document.querySelector('.button-checkout-cart')
-  buttonCheckoutPage.addEventListener('click', () => {
 
-    window.location.href = `checkout.html`
-  })
 }
-// hien co bao nhieu san pham tren icon gio hang 
-// const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
 
+sectionCartRow.addEventListener('click', async (event) => {
+  const target = event.target;
+  const row = target.closest('.content-cart-page');
+  if (!row) return;
+  const productId = row.dataset.id;
+  const sizeSelected = row.dataset.size;
+  const quantityInput = row.querySelector('.quantity-cart');
+  let currentQuantity = parseInt(quantityInput.value);
+  if (target.classList.contains('plus')) {
+    const res = await updateCartApi({
+      productId,
+      sizeSelected,
+      quantity: currentQuantity + 1
+    })
+    if (res) initCartPage();
+  }
+  if (target.classList.contains('minus')) {
+    if (currentQuantity > 1) {
+      const res = await updateCartApi({
+        productId,
+        sizeSelected,
+        quantity: currentQuantity - 1
+      })
+      if (res) initCartPage()
+    }
+  }
+  if (target.classList.contains('button-cart-remove')) {
+    if (confirm('Bạn chắc chắn muốn xoá sản phẩm này')) {
+      const res = await deleteCartApi({
+        productId,
+        sizeSelected
+      })
+      if (res) initCartPage()
+    }
+  }
+})
+function updateCartQuantityIcon(total) {
+  const quantityElement = document.querySelector('.update-content-cart');
+  if (!quantityElement) return;
 
-const quantityElement = document.querySelector('.update-content-cart');
-
-if (currentUser && quantityElement) {
-  const totalQuantity = cart.reduce((total, item) => total + Number(item.quantity), 0);
-
-  if (totalQuantity > 0) {
-    quantityElement.textContent = totalQuantity;
+  quantityElement.textContent = total;
+  if (total > 0) {
     quantityElement.classList.remove('hidden');
   } else {
     quantityElement.classList.add('hidden');
-  }
-} else {
-  // Ẩn nếu chưa đăng nhập
-  if (quantityElement) {
-    quantityElement.classList.add('hidden');
-  }
-}
-// cap nhat hin thi icon khi click
-function updateCartQuantityIcon() {
-  const quantityElement = document.querySelector('.update-content-cart');
-  const cart = JSON.parse(localStorage.getItem('cart')) || [];
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'))
-
-  if (currentUser && quantityElement) {
-    const userCart = cart.filter(item => item.email === currentUser.email);
-    const totalQuantity = userCart.reduce((total, item) => total + Number(item.quantity), 0);
-
-    if (totalQuantity > 0) {
-      quantityElement.textContent = totalQuantity;
-      quantityElement.classList.remove('hidden');
-    } else {
-      quantityElement.classList.add('hidden');
-    }
-  } else {
-    if (quantityElement) {
-      quantityElement.classList.add('hidden');
-    }
   }
 }
 
@@ -358,20 +245,23 @@ const spanLogOut = document.querySelector('.log-out');
 spanLogOut.addEventListener('click', () => {
   const result = confirm("Bạn chắc chắn muốn đăng xuất không");
   if (result) {
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
   }
 });
 // chuyen account
 const buttonMyAccount = document.querySelector('.btn-my-account');
-buttonMyAccount.addEventListener('click' ,() => {
-  if(pareUser) {
-    window.location.href ='my-account.html'
+buttonMyAccount.addEventListener('click', () => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    window.location.href = 'my-account.html'
   }
   else {
     window.location.href = 'register.html'
   }
 })
+
 const inputFind = document.querySelector('.input-find');
 inputFind.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
@@ -382,3 +272,5 @@ inputFind.addEventListener('keydown', (event) => {
     }
   }
 });
+
+initCartPage();
