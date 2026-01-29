@@ -16,7 +16,8 @@ db.Category = require('./category')(sequelize, Sequelize.DataTypes);
 db.Product = require('./product')(sequelize, Sequelize.DataTypes);
 db.User = require('./user')(sequelize, Sequelize.DataTypes);
 db.Product_Image = require('./productImage')(sequelize, Sequelize.DataTypes);
-
+db.HistoryOrder = require('./historyOrder')(sequelize, Sequelize.DataTypes);
+db.OrderItem = require('./orderItem')(sequelize, Sequelize.DataTypes);
 Object.keys(db).forEach(modelName => {
     if (db[modelName].associate) {
         db[modelName].associate(db);
