@@ -11,10 +11,11 @@ const sequelize = new Sequelize(
     config.password,
     {
         ...config,
-        timezone: '+07:00', // Ép buộc Sequelize dùng múi giờ Việt Nam
+        timezone: '+07:00',
         dialectOptions: {
-            dateStrings: true, // Không tự động chuyển đổi định dạng ngày
-            typeCast: true     // Giúp MySQL trả về đúng kiểu dữ liệu
+            ...config.dialectOptions,   // GIỮ SSL
+            dateStrings: true,
+            typeCast: true
         }
     }
 );
