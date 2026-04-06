@@ -16,7 +16,7 @@ const ProductImageRouter = require('./routers/productImageRouter') ;
 const seedAdmin = require('./controllers/seedAdmin');
 const db = require('./models') ;
 
-const PORT = process.env.DB_PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 
 // bật CORS cho frontend HTML/JS thuần

@@ -10,7 +10,7 @@ module.exports = {
         port: process.env.DB_PORT,
         dialectOptions: {
             ssl: {
-                rejectUnauthorized: true
+                rejectUnauthorized: false
             }
         }
     },
