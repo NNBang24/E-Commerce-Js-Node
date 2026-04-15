@@ -14,12 +14,18 @@ const categoryMap = {
     't-shirt': 4
 }
 
-function buildWhere(price, category, highlight, search) {
+async function  buildWhere (price, category, highlight, search) {
     let where = {};
 
-
-    if (categoryMap[category]) {
-        where.categoryId = categoryMap[category];
+    if(category && category !== 'all') {
+        const categoryRecord = await Category.findOne({
+                where :{
+                    name : category
+                }
+        })
+        if(categoryRecord) {
+            where.categoryId = categoryRecord.id
+        }
     }
 
 
@@ -95,7 +101,7 @@ const buildSort = (sort) => {
 exports.getAllProducts = async (req, res, next) => {
     try {
         const { category, price,name , search, sort, highlight, page = 1, limit = 5 } = req.query;
-        const where = buildWhere(price, category, highlight, search ,name);
+        const where = await buildWhere(price, category, highlight, search ,name);
         const order = buildSort(sort);
         const offset = (Number(page) - 1) * Number(limit);
         const { rows, count } = await Product.findAndCountAll({
@@ -187,11 +193,12 @@ exports.getSimilarProducts = async (req, res, next) => { //Tìm sản phẩm tư
 exports.createProduct = async (req, res, next) => {
     try {
 
-        const { name, description, price, priceSale, sizes, tags, categoryId } = req.body;
+        const { name, description, price, priceSale, sizes, tags, categoryId ,quantity} = req.body;
 
         const newProduct = await Product.create({
             name,
             description,
+            quantity ,
             price: Number(price),
             priceSale: Number(priceSale),
             sizes: sizes ? JSON.parse(sizes) : [],
@@ -212,11 +219,13 @@ exports.updateProduct = async (req, res, next) => {
         if (!product) {
             return res.status(404).json({ message: 'Khong tim thay san pham' });
         }
-        const { name, description, price, priceSale, sizes, tags, categoryId } = req.body;
+        const { name, description, price, priceSale, sizes, tags, categoryId , quantity } = req.body;
+        console.log("aaaaa",req.body);
 
         const updateData = {
             name,
             description,
+            quantity ,
             price: Number(price),
             priceSale: Number(priceSale),
             sizes: sizes ? JSON.parse(sizes) : null,
@@ -234,7 +243,7 @@ exports.updateProduct = async (req, res, next) => {
         if (updatedRows === 0) {
             return res.status(404).json({ message: 'Khong tim thay san pham' });
         }
-        res.json({ message: 'Cap nhat san pham thanh cong', data: product });
+        res.json({ message: `Cap nhat san pham thanh cong `, data: product });
     } catch (error) {
         next(error);
     }

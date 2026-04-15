@@ -52,6 +52,9 @@ module.exports = (sequelize ,DataTypes) => {
             
             categoryId: {
                 type: DataTypes.INTEGER,
+            } ,
+            quantity : {
+                type : DataTypes.INTEGER ,
             }
         },
         {
